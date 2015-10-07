@@ -1,11 +1,11 @@
 #!/bin/bash
-# Project: WPA2 Passive Interception System
-# Title: WPA2 Metadata Collection and Exportation
+# Project: WPA2 Passive Interception System [2.4Ghz]
+# Title: WPA2 Metadata Collection and Exportation [2.4Ghz]
 # By: Joseph Mitchell
 # Date: Oct 6th, 2015
 # Version: 0.1 ALPHA
 # Notes: 
-# Currently only single threaded, built for support of multithreading.
+# Currently only single threaded, built for support of multithreading. Operates on 2.4ghz channels.
 # This work is licensed under a
 # Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
 #
