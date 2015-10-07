@@ -1,0 +1,186 @@
+#!/bin/bash
+# Project: WPA2 Passive Interception System
+# Title: WPA2 Metadata Collection and Exportation
+# By: Joseph Mitchell
+# Date: Oct 6th, 2015
+# Version: 0.1 ALPHA
+# Notes: 
+# Currently only single threaded, built for support of multithreading.
+# This work is licensed under a
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+#
+SUCheck() {
+	if [ $(id -u) != "0" ]; then
+    		echo "You must be the superuser to run this script" >&2
+    		exit 1
+	fi
+}
+printHeader() {
+  echo ".------.------.------.------.------.------.------.------.------.------.------."
+  echo "|W.--. |P.--. |A.--. |2.--. |A.--. |U.--. |T.--. |O.--. |C.--. |A.--. |P.--. |"
+  echo "| :/\: | :/\: | (\/) | (\/) | (\/) | (\/) | :/\: | :/\: | :/\: | (\/) | :/\: |"
+  echo "| :\/: | (__) | :\/: | :\/: | :\/: | :\/: | (__) | :\/: | :\/: | :\/: | (__) |"
+  echo "| *--*W| *--*P| *--*A| *--*2| *--*A| *--*U| *--*T| *--*O| *--*C| *--*A| *--*P|"
+  echo "*------*------*------*------*------*------*------*------*------*------*------*"
+}
+printFooter() {
+  echo ".------.------.------.------.------.------.------.------.------.------.------."
+  echo "|H.--. |A.--. |V.--. |E.--. |N.--. |I.--. |C.--. |E.--. |D.--. |A.--. |Y.--. |"
+  echo "| :/\: | :/\: | (\/) | (\/) | (\/) | (\/) | :/\: | :/\: | :/\: | (\/) | :/\: |"
+  echo "| :\/: | (__) | :\/: | :\/: | :\/: | :\/: | (__) | :\/: | :\/: | :\/: | (__) |"
+  echo "| *--*H| *--*A| *--*V| *--*E| *--*N| *--*I| *--*C| *--*E| *--*D| *--*A| *--*Y|"
+  echo "*------*------*------*------*------*------*------*------*------*------*------*"
+}
+selectMonInt() {
+	echo "|		[->] How many monitors on this installation?		|"
+	read adapters
+	monIntCntEnt=0
+	while [ $(airmon-ng | grep 'mon' | sed '/^\s*$/d' | wc -l) -lt $adapters ]; do
+		airmon-ng | grep 'wlan'
+		echo "Which wireless Inferface should the monitor use?"
+		read interface
+		airmon-ng start $interface >> /dev/null
+		wrkInt[$monIntCntEnt]="$(airmon-ng | grep 'mon' | cut -d'	' -f2 | tail -n1)"
+		((monIntCntEnt++))
+	done
+}
+allMonInt() {
+	monIntCntEnt=0
+	adapters=$(airmon-ng | grep 'wlan' | sed '/^\s*$/d' | wc -l)
+	while [ $(airmon-ng | grep 'mon' | sed '/^\s*$/d' | wc -l) -lt $adapters ]; do
+		interface[$monIntCntEnt]="$(airmon-ng | tail -n$(($monIntCntEnt)) | head -n1 | awk '/wlan/ {print $1; exit;}')"
+                airmon-ng start ${interface[$monIntCntEnt]} >> /dev/null
+                wrkInt[$monIntCntEnt]="$(airmon-ng | grep 'mon' | cut -d'	' -f1 | tail -n1)"
+		echo "|		[+] ${wrkInt[${monIntCntEnt}]}						|"
+                ((monIntCntEnt++))
+	done
+	echo "|		[+] ALL MONITORS ENABLED				|"
+}
+stopMonInt() {
+	roll=0
+	while [ $monIntCntEnt -gt $roll ]; do
+		airmon-ng stop ${wrkInt[$roll]} >> /dev/null
+		echo "|		[${roll-2}] ${wrkInt[${roll}]}						|"
+       		((roll++))
+	done
+	echo "|		[-] ALL MONITORS SHUTDOWN				|"
+}
+printMonInt() {
+	if [ monIntCntEnt=0 ]; then
+		while [ $(airmon-ng | grep 'mon' | sed '/^\s*$/d' | wc -l) -gt $monIntCntEnt ]; do
+			wrkInt[$monIntCntEnt]="$(airmon-ng | grep 'mon' | cut -d'	' -f2 | tail -n1)"
+                	((monIntCntEnt++))
+		done
+	fi
+	roll=0
+        echo "|         	[*] START LIVE MONITOR LIST				|"
+        while [ $monIntCntEnt -gt $roll ]; do
+                echo "|		[*] ${wrkInt[${roll}]}						|"
+                ((roll++))
+        done
+	echo "|		[*] END LIVE MONITOR LIST				|"
+}
+setParameters() {
+	inter=0
+	while [ $monIntCntEnt -gt $inter ]; do
+		echo "|		[*] For the following interface:			|"
+                echo "|			[$inter] ${wrkInt[${inter}]}					|"
+		echo "|		[->] Which Wi-Fi Channel to listen on (1-11)?		|"
+                read channel[$inter]
+                echo "|		[->] What is the scanning interval in seconds?		|"
+                read hold[$inter]
+		echo "|		[->] How many scans should be done?			|"
+		read int[$inter]
+		((inter++))
+	done
+}
+startBGTmpCapture(){
+		listenInt="$wrkInt"
+		devname="$(date +'%s')_$listenInt_$channel"
+		fu="cap/$devname"
+		airodump-ng -c $channel -w $fu $listenInt > /dev/null 2>&1 &
+		disown $!
+		cap=$fu"-01.cap"
+}
+holdBGTmpCapture() {
+                sleep $hold
+}
+stopBGTmpCapture() {
+		killall airodump-ng
+}
+SampleData() {
+		passcap=$cap
+                passfu=$fu
+		passdev=$devname
+		startBGTmpCapture
+		streamIO="$(date +'%s')_temp"
+		tcpdump -tttt -vvv -r $passcap | grep 'Probe' | grep 'Request' > $streamIO.dump 
+		cat $streamIO.dump | cut -d'(' -f2 | cut -d')' -f1 | sed '/^$/d' >> essid_list_oldmethod.dat
+		cat $passfu"-01.csv" | grep '(not' | sed 's/ //g' >> notauthedprobe_log.csv
+		cat $passfu"-01.csv" | grep 'PSK' | sed 's/ //g' >> apsitesurvey_log.csv
+		wpaclean $streamIO.cap $passcap
+		aircrack-ng $streamIO.cap -J TEMP > $streamIO.dump
+		wc -l $streamIO.dump >> hccat_parse_hist.dat
+		if [ -f TEMP.hccap ]; then
+			bssid="$(cat $streamIO.dump | grep BSSID | cut -d' ' -f3)"
+			essid="$(cat $streamIO.dump | grep ESSID | cut -d' ' -f5)"
+			cat $streamIO.dump >> eapol_log.dat
+			cat $streamIO.dump | sed '/^$/d'
+			cp TEMP.hccap $passdev".hccap" 
+			rm TEMP.hccap
+			cat $streamIO.dump >> $passdev".dat"
+			mkdir $passdev
+			mv $passdev".dat" $passdev
+			mv $passdev".hccap" $passdev
+			tar -c $passdev > $passdev.tar
+			rm -rf $passdev
+			sanitizeTmpIO
+		else
+			sanitizeTmpIO
+		fi
+}
+sanitizeTmpIO() {
+		rm $streamIO".dump"
+		rm $streamIO".cap"
+		rm $passcap
+		rm $passfu"-01.csv"
+		rm $passfu"-01.kismet.csv"
+		rm $passfu"-01.kismet.netxml"
+}
+sanitizeAll() {
+                rm -rf "cap"
+                mkdir cap
+}
+monIntInit() {
+	echo "|		[->] Select monitoring interaces[1] or all[2]		|"
+	read moninstchoice
+	if [ $moninstchoice -eq 1 ]; then
+		selectMonInt
+	elif [ $moninstchoice -eq 2 ]; then
+		allMonInt
+	else
+        	echo "Wrong input"
+        	echo $moninstchoice
+        	exit 1
+	fi
+}
+# MAIN 
+printHeader
+SUCheck
+monIntInit
+printMonInt
+setParameters
+startBGTmpCapture
+COUNTER=0
+while [ $COUNTER -lt $int ]; do
+	holdBGTmpCapture
+	stopBGTmpCapture
+	SampleData
+	((COUNTER++))
+done
+SampleData
+stopBGTmpCapture
+stopMonInt
+sanitizeAll
+printFooter
+exit 1
