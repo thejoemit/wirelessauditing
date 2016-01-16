@@ -35,7 +35,7 @@ In terms of communications, a excerpt from Canadian Law - Criminal Code:
     (ii) in the course of service observing or random monitoring necessary for the purpose of mechanical or service quality control checks, or
     (iii) if the interception is necessary to protect the person’s rights or property directly related to providing the service;"
 
-These private communications are intercepted in accordance with 184.(2).(c).(ii) 
+Any private communications intercepted are in accordance with 184.(2).(c).(ii) 
 
 Furthuring the communications law, another excerpt from Candian Law - Criminal Code:
 
@@ -53,7 +53,7 @@ if the disclosure is necessarily incidental to an interception described in para
 (e) where disclosure is made to a peace officer or prosecutor in Canada or to a person or authority with responsibility in a foreign state for the investigation or prosecution of offences and is intended to be in the interests of the administration of justice in Canada or elsewhere; or
 (f) where the disclosure is made to the Director of the Canadian Security Intelligence Service or to an employee of the Service for the purpose of enabling the Service to perform its duties and functions under section 12 of the Canadian Security Intelligence Service Act."
 
-These private communications are recorded and displayed in accordance with 193.(2).(d).(i). 
+Any private communications recorded is displayed in accordance with 193.(2).(d).(i). 
 
 The author is not liable for any unauthorized access or breach of secure networks as a result of using these scripts or any form of damages sought after. All users are to be in accordance with local laws governing radio transmissions and privacy of communications. The user accepts causation of any action preformed by any script authorized by this repo. The author envokes:
 
