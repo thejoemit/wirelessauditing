@@ -12,15 +12,16 @@
 # This work is licensed under a
 # Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 #
-# SUPER USER CHECKER
+# START USER CHECKER
 # Is used to check if the script is run by the root user.
-# Only executed once when the script is called; an init state function.
 StartChk() {	
 	if [ $(id -u) != "0" ]; then
     		echo "You must be the superuser to run this script" >&2
 		exit 1
   	fi
 }
+# GET REMOTE LIST OF TARS
+# Is used to connect to the sftp server and get a directoy list for tars/.
 getList() {
         echo "[listing get]	$ip"
         touch sftp.bat
@@ -31,6 +32,8 @@ getList() {
         rm sftp.bat
         echo "[listing got]	$ip"
 }
+# READ LIST OF TARS INTO ARRAY
+# Is used to read and parse the output from the listing into an array of file names.
 readList() {
 	echo "[listing read]	sftp_ls.log"
 	linecnt=0
@@ -42,6 +45,8 @@ readList() {
 	rm sftp_ls.dat
         echo "[listing done]	sftp_ls.log"
 }
+# PULL LIST OF TARS FROM SFTP
+# Is used to pull the array of tar files to the local machine.
 pullList() {
 	roll=0
 	while [ $linecnt -gt $roll ]; do
@@ -57,6 +62,8 @@ pullList() {
 		((roll++))
 	done
 }
+# EXTRACT TARS ON LOCAL
+# Is used to extract the array of tars now on the local machine.
 openList() {
         roll=0
         while [ $linecnt -gt $roll ]; do
@@ -68,11 +75,13 @@ openList() {
         done
 
 }
-sftpip="192.168.1.1"
-sftpusr="username"
-sftpid="/home/username/.ssh/id_rsa"
-StartChk
-getList
-readList
-pullList
-openList
+# GLOBAL VARS
+sftpip="192.168.1.1"			#ip address of the sftp server
+sftpusr="username"			#username on the sftp server
+sftpid="/home/username/.ssh/id_rsa"	#authorized local key for remote
+# MAIN FUNCTION
+StartChk	#check if root
+getList		#sftp get list
+readList	#read the list to array
+pullList	#sftp pull the array of files
+openList	#extract the array of files
