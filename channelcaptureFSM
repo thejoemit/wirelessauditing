@@ -2,29 +2,29 @@
 #       Project: WPA2 Passive Interception System
 #       Title: WPA2 Fixed Channel Capture FSM
 #       By: Joseph Mitchell
-#       Date: Jan 11th, 2015
+#       Date: Jan 15th, 2015
 #       This work is licensed under a
 #       Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
 #
 # SUPER USER CHECKER
 # Is used to check if the script is run by the root user.
 # Only executed once when the script is called; an init state function.
-StartChk() {
-  if [ $(id -u) != "0" ]; then
-    echo "You must be the superuser to run this script" >&2
-    echo "Usage is #./channelcaptureFSM {channel} {timer}"
-    exit 1
-  fi
-  if [ "$#" -ne 2 ]; then
-    echo "You have passed an illegal amount of parameters" >&2
-    echo "Usage is #./channelcaptureFSM {channel} {timer}"
-    exit 1
-  fi
-  if [$(echo "$1" | grep '^[1-9][0-2]' | wc -l) -ne 1  ] || [ $(echo "$2" | grep '^[1-9][0-9][0-9][0-9]' | wc -l) -ne 1 ]; then
-    echo "You have passed an illegal parameters" >&2
-    echo "Usage is #./channelcaptureFSM {channel} {timer}"
-    exit 1
-  fi
+StartChk() {	
+	if [ $(id -u) != "0" ]; then
+    		echo "You must be the superuser to run this script" >&2
+    		echo "Usage is #./channelcaptureFSM {channel} {timer}"
+		exit 1
+  	fi
+	if [ "$#" -ne 2 ]; then
+		echo "You have passed an illegal amount of parameters" >&2
+		echo "Usage is #./channelcaptureFSM {channel} {timer}"
+		exit 1
+	fi
+	if [$(echo "$1" | grep '^[1-9][0-2]' | wc -l) -ne 1  ] || [ $(echo "$2" | grep '^[1-9][0-9][0-9][0-9]' | wc -l) -ne 1 ]; then
+		 echo "You have passed an illegal parameters" >&2
+		 echo "Usage is #./channelcaptureFSM {channel} {timer}"
+		 exit 1
+  	fi
 }
 # STOP ALL MONITOR INTERFACES
 # While airmon-ng detects a monitor interface, shut down first listed monitor.
@@ -62,7 +62,7 @@ startCap(){
 # HOLD TIMER SLEEPING STATE
 # Executed by the FSM after starting a capture; the second state.
 holdTimer() {
-  sleep $hold
+  	sleep $hold
 }
 # STOP 802.11gn CAPTURE
 # Using the preserved capture process, kill the capture on the monitor interface.
@@ -91,14 +91,14 @@ procData() {
 # Using the files from the last capture, add all to a tarball.
 # Executed by the FSM when a capture has been processed; the fifth state.
 packData() {
-  log="log/$streamIO"
+	 log="log/$streamIO"
 	echo "[$tcnt][packing start]	$log"
-  mkdir $log
-  mv wpa2log_unauthedprobe.csv $log
-  mv wpa2log_sitesurveypsk.csv $log
-  mv $tcap $log
-  mv $csv $log
-  tar -c $log > $streamIO.tar
+  	mkdir $log
+  	mv wpa2log_unauthedprobe.csv $log
+  	mv wpa2log_sitesurveypsk.csv $log
+  	mv $tcap $log
+  	mv $csv $log
+ 	tar -c $log > $streamIO.tar
 	echo "[$tcnt][packing done]	${streamIO}.tar"
 }
 # PASS PACKED DATA
@@ -118,12 +118,12 @@ passData() {
 # Clean up all files produced during the previous capture.
 # Executed by the FSM after data has been sent to server; the sixth and final state.
 sanitize() {
-  rm -rf $log
-  echo "[$tcnt][sanitization]	$log"
+ 	rm -rf $log
+ 	echo "[$tcnt][sanitization]	$log"
 	rm $streamIO".tar"
-  echo "[$tcnt][sanitization]	${streamIO}.tar"
-  rm $tfid"-01.kismet.csv"
-  rm $tfid"-01.kismet.netxml"
+ 	echo "[$tcnt][sanitization]	${streamIO}.tar"
+ 	rm $tfid"-01.kismet.csv"
+  	rm $tfid"-01.kismet.netxml"
 	echo "[$tcnt][sanitization]	$tfid"
 }
 # INIT VARIABLES
@@ -133,10 +133,10 @@ counter=0           #loop counter
 server=192.196.1.1  #sftp server to send tars to
 user=sftpusr        #sftp username to use
 # INIT STATE
-SUChk       #check root
+SUChk		#check root
 stopAllMon	#kills all monitors
-startMon    #start one monitor on first listed wlan int
-startCap    #begin first capture
+startMon	#start one monitor on first listed wlan int
+startCap	#begin first capture
 # FSM CHANNELCAP
 while [ 1 -lt 2 ]; do
 	holdTimer	#wait for time period in seconds
