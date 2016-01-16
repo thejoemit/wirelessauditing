@@ -68,9 +68,9 @@ openList() {
         done
 
 }
-sftpip="192.168.13.31"
-sftpusr="net4901"
-sftpid="/home/root/.ssh/id_rsa"
+sftpip="192.168.1.1"
+sftpusr="username"
+sftpid="/home/username/.ssh/id_rsa"
 StartChk
 getList
 readList
