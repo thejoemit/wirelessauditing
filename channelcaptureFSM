@@ -1,10 +1,19 @@
 #!/bin/bash
-#       Project: WPA2 Passive Interception System
-#       Title: WPA2 Fixed Channel Capture FSM
-#       By: Joseph Mitchell
-#       Date: Jan 15th, 2015
-#       This work is licensed under a
-#       Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+# Project: WPA2 Passive Interception System [2.4Ghz]
+# Title: WPA2 Fixed Channel Capture FSM [2.4Ghz]
+# Author: the.joe.mit@gmail.com (0x766663B1)
+# Date: Jan 16th, 2015
+# Version: 1.0 BETA
+# Notes:
+# Sets up intervalled wifi channel monitoring.
+# Frame capture is stopped/started quickly to prevent loss of data.
+# Currently  Operates on 2.4ghz channels.
+# Parses a capture, tarballs logged files
+# Exports to an intermediary SFTP usr chroot
+# Sanitizes remaining data.
+#
+# This work is licensed under a
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 #
 # SUPER USER CHECKER
 # Is used to check if the script is run by the root user.
