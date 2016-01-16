@@ -37,7 +37,7 @@ In terms of communications, a excerpt from Canadian Law - Criminal Code:
 
 These private communications are intercepted in accordance with 184.(2).(c).(ii) 
 
-Furthuring the communications law, another excerpt from Candian LAw - Criminal Code:
+Furthuring the communications law, another excerpt from Candian Law - Criminal Code:
 
 "193. (1) Where a private communication has been intercepted by means of an electro-magnetic, acoustic, mechanical or other device without the consent, express or implied, of the originator thereof or of the person intended by the originator thereof to receive it, every one who, without the express consent of the originator thereof or of the person intended by the originator thereof to receive it, wilfully
   (a) uses or discloses the private communication or any part thereof or the substance, meaning or purport thereof or of any part thereof, or
@@ -59,7 +59,7 @@ The author is not liable for any unauthorized access or breach of secure network
 
 "188.2 No person who acts in accordance with an authorization or under section 184.1 or 184.4 or who aids, in good faith, a person who he or she believes on reasonable grounds is acting in accordance with an authorization or under one of those sections incurs any criminal or civil liability for anything reasonably done further to the authorization or to that section."
 
-BOTTOM LINE:  AUTHORIZATION IS REQUIRED ON CHANNEL TO EXECUTE A SCRIPT & I AM NOT A LAWYER, GET ONE!
+BOTTOM LINE:  AUTHORIZATION IS REQUIRED ON CHANNEL TO EXECUTE A SCRIPT!
 
 # Creative Commons License
 This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
