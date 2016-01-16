@@ -21,7 +21,7 @@
 StartChk() {	
 	if [ $(id -u) != "0" ]; then
     		echo "You must be the superuser to run this script" >&2
-    		echo "Usage is #./chancapFSM {channel} {timer}"
+    		echo "Usage is #./node_chancapFSM {channel} {timer}"
 		exit 1
   	fi
 	if [ "$#" -ne 2 ]; then
