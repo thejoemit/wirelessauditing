@@ -110,7 +110,7 @@ packData() {
  	tar -c $log > $streamIO.tar
 	echo "[$tcnt][packing done]	${streamIO}.tar"
 }
-# PASS PACKED DATA
+# PASS PACK DATA
 # Using the tarball produced in the last state, push to the predefined server.
 # Executed by the FSM after capture data has been tarballed; the sixth state.
 passData() {
