@@ -1,0 +1,78 @@
+#!/bin/bash
+# Project: WPA2 Passive Interception System [2.4Ghz]
+# Title: WPA2 Pull and Extract
+# Author: the.joe.mit@gmail.com (0x766663B1)
+# Date: Jan 16th, 2015
+# Version: 1.0 BETA
+# Notes:
+# Connects to sftp server, lists an array or tars, disconnects
+# Connects to sftp server, pulls a listed tar, disconnects, repeats
+# Extracts each pulled tar in the list and removes the archive
+#
+# This work is licensed under a
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+#
+# SUPER USER CHECKER
+# Is used to check if the script is run by the root user.
+# Only executed once when the script is called; an init state function.
+StartChk() {	
+	if [ $(id -u) != "0" ]; then
+    		echo "You must be the superuser to run this script" >&2
+		exit 1
+  	fi
+}
+getList() {
+        echo "[listing get]	$ip"
+        touch sftp.bat
+        echo "cd tars" > sftp.bat
+        echo "ls -lah" >> sftp.bat
+        echo "bye" >> sftp.bat
+        sftp -b sftp.bat -i $sftpid $sftpusr@$ip > sftp_ls.dat
+        rm sftp.bat
+        echo "[listing got]	$ip"
+}
+readList() {
+	echo "[listing read]	sftp_ls.log"
+	linecnt=0
+	while [ $(cat sftp_ls.dat | sed '/^d/d' | egrep '[t][a][r]$' | wc -l) -gt $linecnt ]; do
+		tars[$linecnt]="$(cat sftp_ls.dat | sed '/^d/d' | egrep '[t][a][r]$' | awk -v lst="$linecnt" 'NR>lst' | head -n1 | awk '/tar/ {print $9; exit;}')"
+		echo "[listing][$linecnt]	${tars[${linecnt}]}"
+		((linecnt++))
+	done
+	rm sftp_ls.dat
+        echo "[listing done]	sftp_ls.log"
+}
+pullList() {
+	roll=0
+	while [ $linecnt -gt $roll ]; do
+		touch sftp.bat
+		echo "lcd /home/net4901/tars" > sftp.bat
+		echo "cd tars" >> sftp.bat
+		echo "get ${tars[${roll}]}" >> sftp.bat
+		echo "rm ${tars[${roll}]}" >> sftp.bat
+		echo "bye" >> sftp.bat
+		sftp -b sftp.bat -i $sftpid $sftpusr@$sftpip > /dev/null
+		rm sftp.bat
+		echo "[pulling][$roll]	sftp://$ip/${tars[${roll}]} "
+		((roll++))
+	done
+}
+openList() {
+        roll=0
+        while [ $linecnt -gt $roll ]; do
+              	xtr="/home/net4901/tars/${tars[${roll}]}"
+                tar -xf $xtr
+		rm $xtr
+                echo "[extracting][$roll]	${tars[${roll}]}"
+                ((roll++))
+        done
+
+}
+sftpip="192.168.13.31"
+sftpusr="net4901"
+sftpid="/home/root/.ssh/id_rsa"
+StartChk
+getList
+readList
+pullList
+openList
