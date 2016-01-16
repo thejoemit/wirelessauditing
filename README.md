@@ -7,7 +7,7 @@ The functions use and require the aircrack-ng suite of tools, and is to be used 
 
 These scripts are tested in a wireless lab and have proven effective when launched from debian based distros.
 
-To set up your own wireless lab you will require a linux machine running debian linux, 2 wics (1 capable of monitoring),
+To set up your own wireless lab you will require a linux machine running debian linux, 2 wnics (1 capable of monitoring),
 1 wireless ap and you should be able to set it up in such a way that 1 wic connects to the ap while the other captures the EAPOL.
 
 The author is not liable for any unauthorized access or breach of secure networks as a result of using these scripts or any form of damages sought after. The user accepts causation of any action preformed by any script authorized by this repo.
