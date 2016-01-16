@@ -1,0 +1,122 @@
+#!/bin/bash
+# Project: WPA2 Passive Interception System [2.4Ghz]
+# Title: WPA Web Updater
+# Author: the.joe.mit@gmail.com (0x766663B1)
+# Date: Jan 16th, 2015
+# Version: 0.5 ALPHA
+# Notes:
+# Made as a backup to php or other dynamic webcoding options
+# Selects all rows from mysql table with capture data to a dump file
+# Read the dump file and parses table content into arrays
+# Writes a html page from those data arrays manipulated from the table
+#
+# This work is licensed under a
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+#
+# SQL CAPTURE TABLE DUMPER
+# Used to dump the SQL table structured in the srv_inspect script format
+# Pushed the select query results to a temporary data file
+sqlDump() {
+echo "[WebUpdater sql] DUMP STARTED $dbs @ $timestamp"
+selectstm="select id,CaptureStarted,CaptureStopped,Channel,ESSID,BSSID,Station,WordPerSec,WordProgress,Password,CrackStarted,CrackStopped from ${table};"
+dumpfile="${timestamp}.dump"
+echo $selectstm | mysql --user=$dbusr --password=$dbpass --host=$dbs -D $dbname > $dumpfile
+echo "[WebUpdater sql] DUMP DONE $dumpfile" 
+}
+# SQL DUMP READER
+# Used to parse the dump data into a multiple data arrays.
+# Some table data formats are parsed or changed for better human output.
+readDump() {
+roll=0
+echo "[WebUpdater read] READING $dumpfile STARTED"
+while [ $(cat $dumpfile | grep '^[0-9]' | wc -l) -gt $roll ]; do
+	id[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f1)"
+	capstarted[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f2)"
+	capstopped[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f3)"
+	# pase the channel character out of the output
+	chan="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f4)"
+	channel[$roll]="$(echo "$chan" | grep -o '[0-9]*')"
+	essid[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f5)"
+	bssid[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f6)"
+	station[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f7)"
+        speed[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f8)"
+	#parse the word found and the word total from the ratio
+        wordratio="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f9)"
+	wordfind[$roll]="$(echo "$wordratio" | cut -d/ -f1)"
+        wordtotal[$roll]="$(echo "$wordratio" | cut -d/ -f2)"
+	password[$roll]="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f10)"
+	#translate the time signature into UNIX epoch
+        crkstart="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f11)"
+        crkstop="$(cat $dumpfile | grep '^[0-9]' | awk -v lst="$roll" 'NR>lst' | head -n1  | cut -d"	" -f12)"
+        crackstart[$roll]="$(date -d"$crkstart" +%s)"
+        crackstop[$roll]="$(date -d"$crkstop" +%s)"
+	((roll++))
+done
+echo "[WebUpdater read] READING $dumpfile DONE"
+}
+# HTML PAGE WRITER
+# Used to write the arrays into a HTML table format.
+# The table content is dynamic to that of the database
+writePage() {
+roll=0
+echo "[WebUpdater write] WRITING TO: $webfile"
+echo "<html>" > $webfile
+echo "<body>" >> $webfile
+echo "<table>" >> $webfile
+        echo "<tr>" >> $webfile
+        echo "<th>ID</th>" >> $webfile
+        echo "<th>Cap.Start</th>" >> $webfile
+        echo "<th>Cap.Stop</th>" >> $webfile
+        echo "<th>Ch.</th>" >> $webfile
+        echo "<th>ESSID</th>" >> $webfile
+        echo "<th>BSSID</th>" >> $webfile
+        echo "<th>Station</th>" >> $webfile
+        echo "<th>WPS</th>" >> $webfile
+        echo "<th>Word</th>" >> $webfile
+        echo "<th>Total</th>" >> $webfile
+        echo "<th>Crack.Start</th>" >> $webfile
+        echo "<th>Crack.Stop</th>" >> $webfile
+        echo "<th>Plain-text Password</th>" >> $webfile
+        echo "</tr>" >> $webfile
+while [ $(cat $dumpfile | grep '^[0-9]' | wc -l) -gt $roll ]; do
+	echo "<tr>" >> $webfile
+	echo "<td>${id[${roll}]}</td>" >> $webfile
+	echo "<td>${capstarted[${roll}]}</td>" >> $webfile
+        echo "<td>${capstopped[${roll}]}</td>" >> $webfile
+        echo "<td>${channel[${roll}]}</td>" >> $webfile
+        echo "<td>${essid[${roll}]}</td>" >> $webfile
+        echo "<td>${bssid[${roll}]}</td>" >> $webfile
+        echo "<td>${station[${roll}]}</td>" >> $webfile
+        echo "<td>${speed[${roll}]}</td>" >> $webfile
+        echo "<td>${wordfind[${roll}]}</td>" >> $webfile
+        echo "<td>${wordtotal[${roll}]}</td>" >> $webfile
+        echo "<td>${crackstart[${roll}]}</td>" >> $webfile
+        echo "<td>${crackstop[${roll}]}</td>" >> $webfile
+        echo "<td>${password[${roll}]}</td>" >> $webfile
+     	echo "</tr>" >> $webfile
+	((roll++))
+done
+echo "</table>" >> $webfile
+echo "</body>" >> $webfile
+echo "</html>" >> $webfile
+echo "[WebUpdater write] WRITING DONE! $webfile"
+}
+# SANITIZATION
+# Used to remove any files created during this scripts runtime
+sanitize() {
+rm $dumpfile
+echo "[WebUpdater del] Sanitization $dumpfile"
+}
+# GLOBAL VARIABLES
+dbs="192.168.13.250"
+dbusr="WebUsr"
+dbpass="net4901"
+dbname="net4901_mysql"
+table="net4901"
+timestamp="$(date +'%s')"
+webfile="/var/www/html/table.html"
+# MAIN FUNCTION
+sqlDump
+readDump
+writePage
+sanitize
