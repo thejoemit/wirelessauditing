@@ -1,4 +1,4 @@
-http://creativecommons.org/licenses/by-nc-sa/4.0/
+https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 CREATIVE COMMONS Attribution-NonCommercial-ShareAlike 4.0 International
 
