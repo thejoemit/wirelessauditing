@@ -1,0 +1,149 @@
+#!/bin/bash
+#       Project: WPA2 Passive Interception System
+#       Title: WPA2 Fixed Channel Capture FSM
+#       By: Joseph Mitchell
+#       Date: Jan 11th, 2015
+#       This work is licensed under a
+#       Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+#
+# SUPER USER CHECKER
+# Is used to check if the script is run by the root user.
+# Only executed once when the script is called; an init state function.
+StartChk() {
+  if [ $(id -u) != "0" ]; then
+    echo "You must be the superuser to run this script" >&2
+    echo "Usage is #./channelcaptureFSM {channel} {timer}"
+    exit 1
+  fi
+  if [ "$#" -ne 2 ]; then
+    echo "You have passed an illegal amount of parameters" >&2
+    echo "Usage is #./channelcaptureFSM {channel} {timer}"
+    exit 1
+  fi
+  if [$(echo "$1" | grep '^[1-9][0-2]' | wc -l) -ne 1  ] || [ $(echo "$2" | grep '^[1-9][0-9][0-9][0-9]' | wc -l) -ne 1 ]; then
+    echo "You have passed an illegal parameters" >&2
+    echo "Usage is #./channelcaptureFSM {channel} {timer}"
+    exit 1
+  fi
+}
+# STOP ALL MONITOR INTERFACES
+# While airmon-ng detects a monitor interface, shut down first listed monitor.
+# Only executed once before the FSM is started; an init state function.
+stopAllMon() {
+	roll=0
+	while [ $(airmon-ng | grep 'mon' | sed '/^\s*$/d' | wc -l) -gt 0 ]; do
+		mon="$(airmon-ng | grep 'mon' | awk '/mon/ {print $1; exit;}')"
+		airmon-ng stop $mon >> /dev/null
+		echo "[monitor stop]	${mon}"
+		((roll++))
+	done
+}
+# START ALL MONITOR INTERFACES
+# Using the first interface airmon-ng detects, enable a monitor interface.
+# Only executed once before the FSM is started; an init state function.
+startMon() {
+	interface="$(airmon-ng | awk '/wlan/ {print $1; exit;}')"
+	airmon-ng start $interface >> /dev/null
+	wrkInt="$(airmon-ng | awk '/mon/ {print $1; exit;}')"
+	echo "[monitor start]	${wrkInt}"
+}
+# START 802.11gn CAPTURE STATE
+# Using the monitor interface, start a capture on the monitor interface.
+# Executed by the FSM during capture transition; the first state.
+startCap(){
+	did="$(date +'%s')_${wrkInt}_channel${channel}"
+	fid="cap/$did"
+	airodump-ng -c $channel -w $fid $wrkInt > /dev/null 2>&1 &
+	disown $!
+	dumpproc=$!
+	cap=$fid"-01.cap"
+	echo "[$counter][capture start]	$cap"
+}
+# HOLD TIMER SLEEPING STATE
+# Executed by the FSM after starting a capture; the second state.
+holdTimer() {
+  sleep $hold
+}
+# STOP 802.11gn CAPTURE
+# Using the preserved capture process, kill the capture on the monitor interface.
+# Executed by the FSM during capture transition; the third state.
+stopCap() {
+	kill $dumpproc
+	echo "[$counter][capture done]	$cap"
+	tcnt=$counter
+	tcap=$cap
+	tfid=$fid
+	tdid=$did
+	((counter++))
+}
+# PROCESS DATA 802.11gn CAPTURE
+# Using the preserved capture from the last capture, parse information.
+# Executed by the FSM after a capture terminates; the fourth state.
+procData() {
+	streamIO="$(date +'%s')_${tdid}"
+	echo "[$tcnt][parser start]	$streamIO"
+	csv=$tfid"-01.csv"
+	cat -v $csv | grep '(not' | sed 's/ //g' > wpa2log_unauthedprobe.csv
+	cat -v $csv | grep 'PSK' | sed 's/ //g' > wpa2log_sitesurveypsk.csv
+	echo "[$tcnt][parser done]	$streamIO"
+}
+# PACK CAPTURE DATA
+# Using the files from the last capture, add all to a tarball.
+# Executed by the FSM when a capture has been processed; the fifth state.
+packData() {
+  log="log/$streamIO"
+	echo "[$tcnt][packing start]	$log"
+  mkdir $log
+  mv wpa2log_unauthedprobe.csv $log
+  mv wpa2log_sitesurveypsk.csv $log
+  mv $tcap $log
+  mv $csv $log
+  tar -c $log > $streamIO.tar
+	echo "[$tcnt][packing done]	${streamIO}.tar"
+}
+# PASS PACKED DATA
+# Using the tarball produced in the last state, push to the predefined server.
+# Executed by the FSM after capture data has been tarballed; the sixth state.
+passData() {
+	echo "[$tcnt][sending start]	${streamIO}.tar"
+	touch sftp.bat
+	echo "cd tars" > sftp.bat
+	echo "put ${streamIO}.tar" >> sftp.bat
+	echo "bye" >> sftp.bat
+	sftp -b sftp.bat $user@$server > /dev/null
+	rm sftp.bat
+	echo "[$tcnt][sending done]	${streamIO}.tar"
+}
+# SANITIZE DATA
+# Clean up all files produced during the previous capture.
+# Executed by the FSM after data has been sent to server; the sixth and final state.
+sanitize() {
+  rm -rf $log
+  echo "[$tcnt][sanitization]	$log"
+	rm $streamIO".tar"
+  echo "[$tcnt][sanitization]	${streamIO}.tar"
+  rm $tfid"-01.kismet.csv"
+  rm $tfid"-01.kismet.netxml"
+	echo "[$tcnt][sanitization]	$tfid"
+}
+# INIT VARIABLES
+channel=$1          #2.4Ghz channel
+hold=$2             #time in seconds to capture
+counter=0           #loop counter
+server=192.196.1.1  #sftp server to send tars to
+user=sftpusr        #sftp username to use
+# INIT STATE
+SUChk       #check root
+stopAllMon	#kills all monitors
+startMon    #start one monitor on first listed wlan int
+startCap    #begin first capture
+# FSM CHANNELCAP
+while [ 1 -lt 2 ]; do
+	holdTimer	#wait for time period in seconds
+	stopCap		#stop the disowned background capture
+	startCap	#starts new cap right away after stopping
+	procData	#grep parse csv, possible local value
+	packData	#packs all the data into a tarball
+	passData	#send data securly to fileserver
+	sanitize	#removes used data
+done
