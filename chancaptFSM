@@ -15,7 +15,7 @@
 # This work is licensed under a
 # Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 #
-# SUPER USER CHECKER
+# START USER/ARG CHECKER
 # Is used to check if the script is run by the root user.
 # Only executed once when the script is called; an init state function.
 StartChk() {	
