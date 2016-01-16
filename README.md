@@ -10,7 +10,7 @@ These scripts are tested in a wireless lab and have proven effective when launch
 To set up your own wireless lab you will require a linux machine running debian linux, 2 wnics (1 capable of monitoring),
 1 wireless ap and you should be able to set it up in such a way that 1 wic connects to the ap while the other captures the EAPOL.
 
-# LEGAL
+# Legal Disclaimer
 In no script nor function have there been made attempts to gain what is known "unauthorized" use to any computer/account/PSK system through any means. Access would be considered made when an association or authentication request to the system was successfully interpreted by the system as a authorized attempt granting the unauthorized party access.
 
 In terms of computer access, a excerpt from Canadian Law - Criminal Code:
@@ -55,11 +55,11 @@ if the disclosure is necessarily incidental to an interception described in para
 
 These private communications are recorded and displayed in accordance with 193.(2).(d).(i). 
 
-The author is not liable for any unauthorized access or breach of secure networks as a result of using these scripts or any form of damages sought after. The user accepts causation of any action preformed by any script authorized by this repo. The author envokes:
+The author is not liable for any unauthorized access or breach of secure networks as a result of using these scripts or any form of damages sought after. All users are to be in accordance with local laws governing radio transmissions and privacy of communications. The user accepts causation of any action preformed by any script authorized by this repo. The author envokes:
 
 "188.2 No person who acts in accordance with an authorization or under section 184.1 or 184.4 or who aids, in good faith, a person who he or she believes on reasonable grounds is acting in accordance with an authorization or under one of those sections incurs any criminal or civil liability for anything reasonably done further to the authorization or to that section."
 
-BOTTOM LINE:  AUTHORIZATION IS REQUIRED ON CHANNEL TO EXECUTE A SCRIPT!
+BOTTOM LINE: AUTHORIZATION IS REQUIRED ON CHANNEL TO EXECUTE A SCRIPT & IT'S YOUR RESPONSIBILITY!
 
 # Creative Commons License
 This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
